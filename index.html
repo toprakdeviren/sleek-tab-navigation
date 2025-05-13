@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleek Tab Navigation</title>
+    <style>
+        :root {
+            --nav-bg: #ffffff;
+            --nav-shadow: rgba(15, 23, 42, 0.08);
+            --icon-color: #64748b;
+            --selected-bg: #3b82f6;
+            --selected-icon-color: white;
+            --tooltip-bg: #1e293b;
+            --tooltip-text-color: white;
+            --page-bg: #f1f5f9;
+            --nav-border: rgba(0, 0, 0, 0.05);
+            --focus-ring-color: rgba(59, 130, 246, 0.6);
+
+            --item-size: 56px;
+            --item-margin: 8px;
+            --nav-padding: 12px;
+            --item-slot-width: calc(var(--item-size) + (var(--item-margin) * 2));
+
+            --transition-duration-fast: 0.2s;
+            --transition-duration-medium: 0.4s;
+            --transition-duration-slow: 0.5s;
+            --easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --easing-smooth: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --easing-standard: ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --nav-bg: #1e293b;
+                --nav-shadow: rgba(0, 0, 0, 0.2);
+                --icon-color: #94a3b8;
+                --selected-bg: #2563eb;
+                --page-bg: #0f172a;
+                --nav-border: rgba(255, 255, 255, 0.08);
+                --focus-ring-color: rgba(37, 99, 235, 0.7);
+            }
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--page-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            transition: background-color var(--transition-duration-slow) var(--easing-standard);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .animated-nav {
+            display: flex;
+            position: relative;
+            background-color: var(--nav-bg);
+            padding: var(--nav-padding);
+            border-radius: 28px;
+            box-shadow: 0 10px 30px -5px var(--nav-shadow);
+            transition: all var(--transition-duration-medium) var(--easing-bounce);
+            border: 1px solid var(--nav-border);
+            animation: navEntrance 0.8s var(--easing-bounce) 0.2s forwards;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+
+        @keyframes navEntrance {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animated-nav:hover {
+            box-shadow: 0 15px 40px -10px rgba(15, 23, 42, 0.15);
+            transform: translateY(-3px);
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .animated-nav:hover {
+                box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .nav-button {
+            width: var(--item-size);
+            height: var(--item-size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 var(--item-margin);
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            border-radius: 18px;
+            transition: transform var(--transition-duration-fast) var(--easing-standard);
+            outline: none;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-4px);
+        }
+        
+        .nav-button:active {
+            transform: scale(0.9) translateY(-2px);
+        }
+
+        input[type="radio"]:focus-visible + .nav-button {
+            box-shadow: 0 0 0 3px var(--focus-ring-color);
+        }
+
+        .nav-button svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--icon-color);
+            transition: fill var(--transition-duration-medium) var(--easing-smooth),
+                        transform var(--transition-duration-medium) var(--easing-smooth);
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.07));
+        }
+
+        .nav-button:hover svg {
+            transform: scale(1.15);
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            input[type="radio"]:checked + .nav-button svg {
+                animation: pulseIcon 2.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+            }
+        }
+
+        @keyframes pulseIcon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .nav-button::before,
+        .nav-button::after {
+            position: absolute;
+            left: 50%;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 10;
+            transform: translateX(-50%) translateY(8px);
+            transition: opacity var(--transition-duration-fast) var(--easing-standard),
+                        transform var(--transition-duration-fast) var(--easing-standard),
+                        visibility 0s var(--transition-duration-fast);
+        }
+
+        .nav-button::before {
+            content: attr(data-tooltip);
+            bottom: calc(100% + 16px);
+            background-color: var(--tooltip-bg);
+            color: var(--tooltip-text-color);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-button::after {
+            content: '';
+            bottom: calc(100% + 10px);
+            border: 6px solid transparent;
+            border-top-color: var(--tooltip-bg);
+        }
+
+        .nav-button:hover::before,
+        .nav-button:hover::after,
+        input[type="radio"]:focus-visible + .nav-button::before,
+        input[type="radio"]:focus-visible + .nav-button::after,
+        input[type="radio"]:checked + .nav-button::before,
+        input[type="radio"]:checked + .nav-button::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+            transition-delay: 0.2s, 0.2s, 0s;
+        }
+
+        input[type="radio"]:checked + .nav-button::before,
+        input[type="radio"]:checked + .nav-button::after {
+            transition-delay: 0.1s, 0.1s, 0s;
+        }
+
+        input[type="radio"]:checked + .nav-button svg {
+            fill: var(--selected-icon-color);
+        }
+
+        .selection-indicator {
+            position: absolute;
+            top: var(--nav-padding);
+            left: var(--nav-padding);
+            width: var(--item-size);
+            height: var(--item-size);
+            background-color: var(--selected-bg);
+            border-radius: 18px;
+            z-index: 1;
+            transition: left var(--transition-duration-slow) var(--easing-bounce),
+                        background-color var(--transition-duration-slow) var(--easing-standard);
+            box-shadow: 0 6px 15px -3px rgba(59, 130, 246, 0.4);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .selection-indicator {
+                box-shadow: 0 6px 20px -3px rgba(37, 99, 235, 0.5);
+            }
+        }
+
+        .selection-indicator::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+            opacity: 0.8;
+        }
+
+        .selection-indicator::after {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            background: var(--selected-bg);
+            border-radius: 22px;
+            filter: blur(8px);
+            opacity: 0.5;
+            z-index: -1;
+            transition: background-color var(--transition-duration-slow) var(--easing-standard);
+        }
+
+        #nav-home:checked ~ .selection-indicator {
+            left: calc(var(--nav-padding) + (var(--item-slot-width) * 0) + var(--item-margin));
+        }
+        #nav-list:checked ~ .selection-indicator {
+            left: calc(var(--nav-padding) + (var(--item-slot-width) * 1) + var(--item-margin));
+        }
+        #nav-automate:checked ~ .selection-indicator {
+            left: calc(var(--nav-padding) + (var(--item-slot-width) * 2) + var(--item-margin));
+        }
+        #nav-optimize:checked ~ .selection-indicator {
+            left: calc(var(--nav-padding) + (var(--item-slot-width) * 3) + var(--item-margin));
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --item-size: 50px;
+                --item-margin: 5px;
+                --nav-padding: 8px;
+            }
+            .nav-button svg { width: 22px; height: 22px; }
+            .animated-nav { border-radius: 24px; }
+            .nav-button::before { font-size: 13px; padding: 7px 12px; }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .nav-button:hover { transform: none; }
+            .nav-button:active { transform: scale(0.92); }
+            .animated-nav:hover { transform: none; }
+            .selection-indicator { transition-duration: 0.3s; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+                transition-delay: 0ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="animated-nav" role="navigation" aria-label="Main navigation">
+        <input type="radio" name="nav-item" id="nav-home" checked aria-labelledby="tooltip-home">
+        <label for="nav-home" class="nav-button" data-tooltip="Home" id="tooltip-home" tabindex="0" role="radio" aria-checked="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg>
+        </label>
+
+        <input type="radio" name="nav-item" id="nav-list" aria-labelledby="tooltip-list">
+        <label for="nav-list" class="nav-button" data-tooltip="List" id="tooltip-list" tabindex="0" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+            </svg>
+        </label>
+
+        <input type="radio" name="nav-item" id="nav-automate" aria-labelledby="tooltip-automate">
+        <label for="nav-automate" class="nav-button" data-tooltip="Automate" id="tooltip-automate" tabindex="0" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66l.2-.34L13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15L11 21z"/>
+            </svg>
+        </label>
+
+        <input type="radio" name="nav-item" id="nav-optimize" aria-labelledby="tooltip-optimize">
+        <label for="nav-optimize" class="nav-button" data-tooltip="Optimize" id="tooltip-optimize" tabindex="0" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+            </svg>
+        </label>
+
+        <div class="selection-indicator" aria-hidden="true"></div>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const nav = document.querySelector('.animated-nav');
+            const radioInputs = nav.querySelectorAll('input[type="radio"]');
+            const navLabels = nav.querySelectorAll('.nav-button');
+
+            function updateAriaStates() {
+                radioInputs.forEach(input => {
+                    const label = nav.querySelector(`label[for="${input.id}"]`);
+                    if (label) {
+                        label.setAttribute('aria-checked', input.checked.toString());
+                    }
+                });
+            }
+
+            updateAriaStates();
+
+            nav.addEventListener('change', function (event) {
+                if (event.target.type === 'radio') {
+                    updateAriaStates();
+                }
+            });
+
+            navLabels.forEach(label => {
+                label.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        const radioId = this.getAttribute('for');
+                        const radioToSelect = document.getElementById(radioId);
+                        if (radioToSelect && !radioToSelect.checked) {
+                            radioToSelect.checked = true;
+                            radioToSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
